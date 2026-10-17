@@ -1,0 +1,52 @@
+
+name: Build Abo Zahra APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download source code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Find project files
+        run: |
+          find . -maxdepth 4 -type f | head -200
+          if [ -f gradlew ]; then chmod +x gradlew; fi
+
+      - name: Build APK
+        run: |
+          if [ -f gradlew ]; then
+            ./gradlew assembleDebug
+          elif [ -f build.gradle ]; then
+            gradle assembleDebug
+          elif [ -f build.gradle.kts ]; then
+            gradle assembleDebug
+          else
+            echo "Gradle project files not found. Extract the Android project ZIP into the repository first."
+            exit 1
+          fi
+
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Abo-Zahra-APK
+          path: |
+            **/build/outputs/apk/**/*.apk
+          if-no-files-found: error
